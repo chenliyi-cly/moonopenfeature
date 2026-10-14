@@ -165,3 +165,13 @@ pub fn EventBus::take_diagnostics(self : EventBus) -> Array[SdkError] {
   self.diagnostics.clear()
   result
 }
+
+///|
+/// Only events corresponding to the current state receive immediate delivery.
+/// Configuration changes are notifications, not a replayable lifecycle state.
+pub fn EventType::matches_status(self : EventType, status : ProviderStatus) -> Bool {
+  match (self, status) {
+    (ProviderReady, Ready) | (ProviderError, Error | Fatal) | (ProviderStale, Stale) => true
+    _ => false
+  }
+}
