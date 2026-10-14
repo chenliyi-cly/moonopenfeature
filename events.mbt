@@ -124,7 +124,10 @@ pub fn EventBus::emit(self : EventBus, event : ProviderEvent) -> Unit {
     for internal in [true, false] {
       for id in ids {
         match self.listeners.get(id) {
-          Some(listener) => if listener.internal == internal { snapshot.push(listener) }
+          Some(listener) =>
+            if listener.internal == internal {
+              snapshot.push(listener)
+            }
           None => ()
         }
       }
@@ -188,8 +191,11 @@ pub fn EventType::matches_status(
 
 ///|
 /// Package-private subscription for ownership routing, never application work.
-fn EventBus::on_internal(self : EventBus, callback : (ProviderEvent) -> Result[Unit, SdkError]) -> Int32 {
+fn EventBus::on_internal(
+  self : EventBus,
+  callback : (ProviderEvent) -> Result[Unit, SdkError],
+) -> Int32 {
   let id = self.on(callback)
-  self.listeners[id] = { ..self.listeners[id], internal: true }
+  self.listeners[id] = { ..self.listeners[id], internal: true, }
   id
 }

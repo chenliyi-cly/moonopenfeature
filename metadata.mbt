@@ -39,7 +39,13 @@ fn FlagMetadata::set(
         Err(SdkError::new(ParseError, "metadata number must be finite"))
       } else {
         match validate_json(value) {
-          Err(_) => Err(SdkError::new(ParseError, "metadata number has an invalid JSON representation"))
+          Err(_) =>
+            Err(
+              SdkError::new(
+                ParseError,
+                "metadata number has an invalid JSON representation",
+              ),
+            )
           Ok(_) => {
             self.values[key] = value
             Ok(())

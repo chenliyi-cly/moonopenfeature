@@ -1,0 +1,22 @@
+name: SDK portability
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install checksum-locked official MoonBit toolchain
+        run: bash scripts/install-ci-toolchain.sh
+      - name: Strict format, interface, check, build, test and example matrix
+        run: python3 scripts/verify.py --native
+      - name: Source interface remains reproducible
+        run: git diff --exit-code

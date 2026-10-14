@@ -10,7 +10,7 @@ pub fn validate_json(value : Json) -> Result[Unit, SdkError] {
 ///|
 fn validate_json_at(
   value : Json,
-  depth : Int,
+  depth : Int32,
   ancestors : Array[Json],
 ) -> Result[Unit, SdkError] {
   if depth > 64 {
@@ -130,7 +130,7 @@ pub fn copy_json(value : Json) -> Json {
 }
 
 ///|
-fn copy_validated_json(value : Json, depth : Int) -> Json {
+fn copy_validated_json(value : Json, depth : Int32) -> Json {
   // Defensive bound: even this private copier terminates on unvalidated input.
   if depth > 64 {
     return Json::null()

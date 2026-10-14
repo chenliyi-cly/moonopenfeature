@@ -8,9 +8,19 @@ pub struct Client {
 
 ///|
 /// Clients are live domain handles, not snapshots of the provider at construction.
-pub fn Sdk::client(self : Sdk, domain? : String = "", name? : String = "", version? : String = "") -> Client {
+pub fn Sdk::client(
+  self : Sdk,
+  domain~ : String = "",
+  name~ : String = "",
+  version~ : String = "",
+) -> Client {
   self.known_domains[domain] = true
-  { sdk: self, metadata: { domain, name, version }, context: EvaluationContext::empty(), hooks: [] }
+  {
+    sdk: self,
+    metadata: { domain, name, version, },
+    context: EvaluationContext::empty(),
+    hooks: [],
+  }
 }
 
 ///|
@@ -53,11 +63,24 @@ pub fn Client::on(
   self : Client,
   event_type : EventType,
   callback : (ProviderEvent) -> Result[Unit, SdkError],
-) -> Int {
-  let id = self.sdk.events().on(callback, event_type=Some(event_type), domain=Some(self.metadata.domain))
+) -> Int32 {
+  let id = self.sdk
+    .events()
+    .on(
+      callback,
+      event_type=Some(event_type),
+      domain=Some(self.metadata.domain),
+    )
   let provider = self.sdk.provider(domain=self.metadata.domain)
   if event_type.matches_status(provider.status()) {
-    match callback(ProviderEvent::new(event_type, provider.name(), domain=Some(self.metadata.domain))) {
+    match
+      callback(
+        ProviderEvent::new(
+          event_type,
+          provider.name(),
+          domain=Some(self.metadata.domain),
+        ),
+      ) {
       Ok(_) => ()
       Err(error) => self.sdk.record_diagnostic(error)
     }
@@ -66,7 +89,7 @@ pub fn Client::on(
 }
 
 ///|
-pub fn Client::off(self : Client, id : Int) -> Bool {
+pub fn Client::off(self : Client, id : Int32) -> Bool {
   self.sdk.events().off(id)
 }
 
@@ -75,51 +98,80 @@ pub fn Client::evaluate(
   self : Client,
   key : String,
   default : FlagValue,
-  options? : EvaluationOptions = EvaluationOptions::new(),
+  options~ : EvaluationOptions = EvaluationOptions::new(),
 ) -> EvaluationDetails {
   let expected = default.flag_type()
   match default.validate() {
-    Err(error) => return EvaluationDetails::from_resolution(key, Resolution::failure(default.copy(), error))
+    Err(error) =>
+      return EvaluationDetails::from_resolution(
+        key,
+        Resolution::failure(default.copy(), error),
+      )
     Ok(_) => ()
   }
   let frozen_default = default.copy()
   let frozen_options = options.copy()
   let provider = self.sdk.provider(domain=self.metadata.domain)
-  let merged = self.sdk.context()
+  let merged = self.sdk
+    .context()
     .merge(frozen_options.transaction_context())
     .merge(self.context.copy())
     .merge(frozen_options.context())
-  let plan = HookPlan::new(expected, self.sdk.hooks(), self.hooks.copy(), frozen_options.hooks(), provider.hooks())
+  let plan = HookPlan::new(
+    expected,
+    self.sdk.hooks(),
+    self.hooks.copy(),
+    frozen_options.hooks(),
+    provider.hooks(),
+  )
   let base : HookContext = {
-    flag_key: key, flag_type: expected, default_value: frozen_default.copy(),
-    evaluation_context: merged, client: self.metadata, provider_name: provider.name(), data: HookData::new(),
+    flag_key: key,
+    flag_type: expected,
+    default_value: frozen_default.copy(),
+    evaluation_context: merged,
+    client: self.metadata,
+    provider_name: provider.name(),
+    data: HookData::new(),
   }
   let hints = frozen_options.hints()
   let before = plan.before(base, hints)
   let final_context = base.with_context(before.context)
   let resolution = match before.error {
     Some(error) => Resolution::failure(frozen_default.copy(), error)
-    None => {
+    None =>
       if self.sdk.is_closed() {
-        Resolution::failure(frozen_default.copy(), SdkError::new(ProviderNotReady, "SDK is shut down"))
+        Resolution::failure(
+          frozen_default.copy(),
+          SdkError::new(ProviderNotReady, "SDK is shut down"),
+        )
       } else {
-        provider.resolve(key, expected, frozen_default.copy(), before.context.copy())
+        provider.resolve(
+          key,
+          expected,
+          frozen_default.copy(),
+          before.context.copy(),
+        )
       }
-    }
   }
-  let mut details = EvaluationDetails::from_resolution(key, resolution.checked(expected, frozen_default))
+  let mut details = EvaluationDetails::from_resolution(
+    key,
+    resolution.checked(expected, frozen_default),
+  )
   if details.error == None {
     match plan.after(final_context, details, hints) {
       Ok(_) => ()
-      Err(error) => details = EvaluationDetails::from_resolution(key, Resolution::failure(frozen_default.copy(), error))
+      Err(error) =>
+        details = EvaluationDetails::from_resolution(
+          key,
+          Resolution::failure(frozen_default.copy(), error),
+        )
     }
   }
   match details.error {
-    Some(error) => {
+    Some(error) =>
       for observer_error in plan.on_error(final_context, error, hints) {
         self.sdk.record_diagnostic(observer_error)
       }
-    }
     None => ()
   }
   for observer_error in plan.run_finally(final_context, details, hints) {
@@ -132,13 +184,17 @@ pub fn Client::evaluate(
 pub fn Client::track_checked(
   self : Client,
   event : TrackingEvent,
-  context? : EvaluationContext = EvaluationContext::empty(),
-  transaction_context? : EvaluationContext = EvaluationContext::empty(),
+  context~ : EvaluationContext = EvaluationContext::empty(),
+  transaction_context~ : EvaluationContext = EvaluationContext::empty(),
 ) -> Result[Unit, SdkError] {
   if self.sdk.is_closed() {
     return Err(SdkError::new(ProviderNotReady, "SDK is shut down"))
   }
-  let merged = self.sdk.context().merge(transaction_context).merge(self.context).merge(context)
+  let merged = self.sdk
+    .context()
+    .merge(transaction_context)
+    .merge(self.context)
+    .merge(context)
   self.sdk.provider(domain=self.metadata.domain).track(event.copy(), merged)
 }
 
@@ -148,8 +204,8 @@ pub fn Client::track_checked(
 pub fn Client::track(
   self : Client,
   event : TrackingEvent,
-  context? : EvaluationContext = EvaluationContext::empty(),
-  transaction_context? : EvaluationContext = EvaluationContext::empty(),
+  context~ : EvaluationContext = EvaluationContext::empty(),
+  transaction_context~ : EvaluationContext = EvaluationContext::empty(),
 ) -> Unit {
   match self.track_checked(event, context~, transaction_context~) {
     Ok(_) => ()

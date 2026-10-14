@@ -10,7 +10,9 @@ test "values exact type and typed accessors" {
   assert_true(float.flag_type() == @moonopenfeature.FlagType::Float)
   assert_true(string.flag_type() == @moonopenfeature.FlagType::String)
   assert_true(structure.flag_type() == @moonopenfeature.FlagType::Structure)
-  assert_true(@moonopenfeature.FlagType::Boolean != @moonopenfeature.FlagType::Integer)
+  assert_true(
+    @moonopenfeature.FlagType::Boolean != @moonopenfeature.FlagType::Integer,
+  )
   assert_true(boolean.as_boolean() == Some(true))
   assert_true(integer.as_integer() == Some(9007199254740993L))
   assert_true(float.as_float() == Some(2.5))
@@ -53,7 +55,10 @@ test "values scalar copies and serialization" {
 
 ///|
 test "values int64 representation survives rounding in JSON payload" {
-  for integer in [0L, -1L, 9007199254740993L, 9223372036854775807L, -9223372036854775808L] {
+  for
+    integer in [
+      0L, -1L, 9007199254740993L, 9223372036854775807L, -9223372036854775808L,
+    ] {
     let value = @moonopenfeature.FlagValue::Integer(integer)
     assert_true(value.as_integer() == Some(integer))
     let encoded = value.to_json()
@@ -73,8 +78,16 @@ test "values structures accept object array null but not scalars" {
   for json in [Json::object({}), Json::array([]), Json::null()] {
     assert_true(@moonopenfeature.FlagValue::Structure(json).validate() is Ok(_))
   }
-  for json in [Json::boolean(true), Json::boolean(false), Json::number(1.0), Json::string("x")] {
-    let error = @moonopenfeature.FlagValue::Structure(json).validate().unwrap_err()
+  for
+    json in [
+      Json::boolean(true),
+      Json::boolean(false),
+      Json::number(1.0),
+      Json::string("x"),
+    ] {
+    let error = @moonopenfeature.FlagValue::Structure(json)
+      .validate()
+      .unwrap_err()
     assert_true(error.code == @moonopenfeature.ErrorCode::TypeMismatch)
     assert_true(error.message.length() > 0)
   }
@@ -84,10 +97,14 @@ test "values structures accept object array null but not scalars" {
 test "values float and nested structure reject nonfinite numbers" {
   let zero = 0.0
   for number in [1.0 / zero, -1.0 / zero, zero / zero] {
-    assert_true(@moonopenfeature.FlagValue::Float(number).validate()
-      is Err({ code: TypeMismatch, .. }))
-    assert_true(@moonopenfeature.FlagValue::Structure(Json::array([Json::number(number)])).validate()
-      is Err({ code: InvalidContext, .. }))
+    assert_true(
+      @moonopenfeature.FlagValue::Float(number).validate()
+      is Err({ code: TypeMismatch, .. }),
+    )
+    assert_true(
+      @moonopenfeature.FlagValue::Structure(Json::array([Json::number(number)])).validate()
+      is Err({ code: InvalidContext, .. }),
+    )
   }
 }
 
@@ -99,9 +116,13 @@ test "values structure copy accessor and serialization detach containers" {
   let copied = flag.copy()
   nested.set("name", Json::string("source changed"))
   items.push(Json::null())
-  let expected = Json::array([Json::object({ "name": Json::string("original") })])
+  let expected = Json::array([
+    Json::object({ "name": Json::string("original") }),
+  ])
   assert_true(copied.as_structure() == Some(expected))
-  guard copied.as_structure() is Some(Array(result)) else { fail("expected array") }
+  guard copied.as_structure() is Some(Array(result)) else {
+    fail("expected array")
+  }
   guard result[0] is Object(fields) else { fail("expected object") }
   fields.set("name", Json::string("getter changed"))
   result.push(Json::null())

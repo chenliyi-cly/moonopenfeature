@@ -18,12 +18,23 @@ pub(all) struct HookContext {
 
 ///|
 pub fn HookContext::copy(self : HookContext) -> HookContext {
-  { ..self, default_value: self.default_value.copy(), evaluation_context: self.evaluation_context.copy() }
+  {
+    ..self,
+    default_value: self.default_value.copy(),
+    evaluation_context: self.evaluation_context.copy(),
+  }
 }
 
 ///|
-pub fn HookContext::with_context(self : HookContext, context : EvaluationContext) -> HookContext {
-  { ..self, default_value: self.default_value.copy(), evaluation_context: context.copy() }
+pub fn HookContext::with_context(
+  self : HookContext,
+  context : EvaluationContext,
+) -> HookContext {
+  {
+    ..self,
+    default_value: self.default_value.copy(),
+    evaluation_context: context.copy(),
+  }
 }
 
 ///|
@@ -32,22 +43,47 @@ pub fn HookContext::with_context(self : HookContext, context : EvaluationContext
 pub struct Hook {
   priv name : String
   priv types : Array[FlagType]?
-  priv before : (HookContext, EvaluationContext) -> Result[EvaluationContext?, SdkError]
-  priv after : (HookContext, EvaluationDetails, EvaluationContext) -> Result[Unit, SdkError]
-  priv error : (HookContext, SdkError, EvaluationContext) -> Result[Unit, SdkError]
-  priv on_finally : (HookContext, EvaluationDetails, EvaluationContext) -> Result[Unit, SdkError]
+  priv before : (HookContext, EvaluationContext) -> Result[
+    EvaluationContext?,
+    SdkError,
+  ]
+  priv after : (HookContext, EvaluationDetails, EvaluationContext) -> Result[
+    Unit,
+    SdkError,
+  ]
+  priv error : (HookContext, SdkError, EvaluationContext) -> Result[
+    Unit,
+    SdkError,
+  ]
+  priv on_finally : (HookContext, EvaluationDetails, EvaluationContext) -> Result[
+    Unit,
+    SdkError,
+  ]
 }
 
 ///|
 pub fn Hook::new(
   name : String,
-  types? : Array[FlagType]? = None,
-  before? : (HookContext, EvaluationContext) -> Result[EvaluationContext?, SdkError] = (_, _) => Ok(None),
-  after? : (HookContext, EvaluationDetails, EvaluationContext) -> Result[Unit, SdkError] = (_, _, _) => Ok(()),
-  error? : (HookContext, SdkError, EvaluationContext) -> Result[Unit, SdkError] = (_, _, _) => Ok(()),
-  on_finally? : (HookContext, EvaluationDetails, EvaluationContext) -> Result[Unit, SdkError] = (_, _, _) => Ok(()),
+  types~ : Array[FlagType]? = None,
+  before~ : (HookContext, EvaluationContext) -> Result[
+    EvaluationContext?,
+    SdkError,
+  ] = (_, _) => Ok(None),
+  after~ : (HookContext, EvaluationDetails, EvaluationContext) -> Result[
+    Unit,
+    SdkError,
+  ] = (_, _, _) => Ok(()),
+  error~ : (HookContext, SdkError, EvaluationContext) -> Result[Unit, SdkError] = (
+    _,
+    _,
+    _,
+  ) => Ok(()),
+  on_finally~ : (HookContext, EvaluationDetails, EvaluationContext) -> Result[
+    Unit,
+    SdkError,
+  ] = (_, _, _) => Ok(()),
 ) -> Hook {
-  { name, types: types.map(ts => ts.copy()), before, after, error, on_finally }
+  { name, types: types.map(ts => ts.copy()), before, after, error, on_finally, }
 }
 
 ///|
@@ -86,7 +122,7 @@ pub fn HookPlan::new(
       }
     }
   }
-  { hooks, data: hooks.map(_ => HookData::new()) }
+  { hooks, data: hooks.map(_ => HookData::new()), }
 }
 
 ///|
@@ -95,7 +131,7 @@ pub fn HookPlan::names(self : HookPlan) -> Array[String] {
 }
 
 ///|
-pub fn HookPlan::length(self : HookPlan) -> Int {
+pub fn HookPlan::length(self : HookPlan) -> Int32 {
   self.hooks.length()
 }
 
@@ -113,14 +149,14 @@ pub fn HookPlan::before(
 ) -> BeforeResult {
   let mut merged = context.evaluation_context.copy()
   for index, hook in self.hooks {
-    let current = { ..context.with_context(merged), data: self.data[index] }
+    let current = { ..context.with_context(merged), data: self.data[index], }
     match (hook.before)(current, hints.copy()) {
       Ok(None) => ()
       Ok(Some(additional)) => merged = merged.merge(additional)
-      Err(error) => return { context: merged, error: Some(error) }
+      Err(error) => return { context: merged, error: Some(error), }
     }
   }
-  { context: merged, error: None }
+  { context: merged, error: None, }
 }
 
 ///|
@@ -132,7 +168,12 @@ pub fn HookPlan::after(
 ) -> Result[Unit, SdkError] {
   let mut index = self.hooks.length() - 1
   while index >= 0 {
-    match (self.hooks[index].after)({ ..context.copy(), data: self.data[index] }, details.copy(), hints.copy()) {
+    match
+      (self.hooks[index].after)(
+        { ..context.copy(), data: self.data[index], },
+        details.copy(),
+        hints.copy(),
+      ) {
       Ok(_) => ()
       Err(error) => return Err(error)
     }
@@ -153,7 +194,12 @@ pub fn HookPlan::on_error(
   let diagnostics = []
   let mut index = self.hooks.length() - 1
   while index >= 0 {
-    match (self.hooks[index].error)({ ..context.copy(), data: self.data[index] }, error, hints.copy()) {
+    match
+      (self.hooks[index].error)(
+        { ..context.copy(), data: self.data[index], },
+        error,
+        hints.copy(),
+      ) {
       Ok(_) => ()
       Err(observer_error) => diagnostics.push(observer_error)
     }
@@ -172,7 +218,12 @@ pub fn HookPlan::run_finally(
   let diagnostics = []
   let mut index = self.hooks.length() - 1
   while index >= 0 {
-    match (self.hooks[index].on_finally)({ ..context.copy(), data: self.data[index] }, details.copy(), hints.copy()) {
+    match
+      (self.hooks[index].on_finally)(
+        { ..context.copy(), data: self.data[index], },
+        details.copy(),
+        hints.copy(),
+      ) {
       Ok(_) => ()
       Err(observer_error) => diagnostics.push(observer_error)
     }

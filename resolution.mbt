@@ -12,29 +12,46 @@ pub(all) struct Resolution {
 ///|
 pub fn Resolution::success(
   value : FlagValue,
-  reason? : String = "UNKNOWN",
-  variant? : String? = None,
-  metadata? : FlagMetadata = FlagMetadata::empty(),
+  reason~ : String = "UNKNOWN",
+  variant~ : String? = None,
+  metadata~ : FlagMetadata = FlagMetadata::empty(),
 ) -> Resolution {
-  { value, reason, variant, error: None, metadata: metadata.copy() }
+  { value, reason, variant, error: None, metadata: metadata.copy(), }
 }
 
 ///|
 pub fn Resolution::failure(default : FlagValue, error : SdkError) -> Resolution {
-  { value: default, reason: "ERROR", variant: None, error: Some(error), metadata: FlagMetadata::empty() }
+  {
+    value: default,
+    reason: "ERROR",
+    variant: None,
+    error: Some(error),
+    metadata: FlagMetadata::empty(),
+  }
 }
 
 ///|
-pub fn Resolution::checked(self : Resolution, expected : FlagType, default : FlagValue) -> Resolution {
+pub fn Resolution::checked(
+  self : Resolution,
+  expected : FlagType,
+  default : FlagValue,
+) -> Resolution {
   if self.error is Some(error) {
-    return { ..Resolution::failure(default.copy(), error), metadata: self.metadata.copy() }
+    return {
+      ..Resolution::failure(default.copy(), error),
+      metadata: self.metadata.copy(),
+    }
   }
   if self.value.flag_type() != expected {
-    return Resolution::failure(default.copy(), SdkError::new(TypeMismatch, "provider returned a different flag type"))
+    return Resolution::failure(
+      default.copy(),
+      SdkError::new(TypeMismatch, "provider returned a different flag type"),
+    )
   }
   match self.value.validate() {
     Err(error) => Resolution::failure(default.copy(), error)
-    Ok(_) => { ..self, value: self.value.copy(), metadata: self.metadata.copy() }
+    Ok(_) =>
+      { ..self, value: self.value.copy(), metadata: self.metadata.copy(), }
   }
 }
 
@@ -49,13 +66,23 @@ pub(all) struct EvaluationDetails {
 }
 
 ///|
-pub fn EvaluationDetails::from_resolution(flag_key : String, resolution : Resolution) -> EvaluationDetails {
-  { flag_key, value: resolution.value, reason: resolution.reason, variant: resolution.variant, error: resolution.error, metadata: resolution.metadata.copy() }
+pub fn EvaluationDetails::from_resolution(
+  flag_key : String,
+  resolution : Resolution,
+) -> EvaluationDetails {
+  {
+    flag_key,
+    value: resolution.value,
+    reason: resolution.reason,
+    variant: resolution.variant,
+    error: resolution.error,
+    metadata: resolution.metadata.copy(),
+  }
 }
 
 ///|
 pub fn EvaluationDetails::copy(self : EvaluationDetails) -> EvaluationDetails {
-  { ..self, value: self.value.copy(), metadata: self.metadata.copy() }
+  { ..self, value: self.value.copy(), metadata: self.metadata.copy(), }
 }
 
 ///|

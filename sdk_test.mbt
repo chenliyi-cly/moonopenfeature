@@ -232,14 +232,34 @@ test "event domain recipients are frozen before API observers replace providers"
 ///|
 test "earlier provider observer cannot erase SDK event ownership" {
   let sdk = @moonopenfeature.Sdk::new()
-  let old = @moonopenfeature.Provider::new("old", (_, _, d, _) => @moonopenfeature.Resolution::success(d))
-  let next = @moonopenfeature.Provider::new("next", (_, _, d, _) => @moonopenfeature.Resolution::success(d))
-  old.events().on(_ => sdk.set_provider(next, domain="a"), event_type=Some(ProviderConfigurationChanged)) |> ignore
+  let old = @moonopenfeature.Provider::new("old", (_, _, d, _) => {
+    @moonopenfeature.Resolution::success(d)
+  })
+  let next = @moonopenfeature.Provider::new("next", (_, _, d, _) => {
+    @moonopenfeature.Resolution::success(d)
+  })
+  old
+  .events()
+  .on(
+    _ => sdk.set_provider(next, domain="a"),
+    event_type=Some(ProviderConfigurationChanged),
+  )
+  |> ignore
   sdk.set_provider(old, domain="a").unwrap()
   let received : Array[String] = []
   let api = Ref(0)
-  sdk.on(ProviderConfigurationChanged, _ => { api.val += 1; Ok(()) }) |> ignore
-  sdk.client(domain="a").on(ProviderConfigurationChanged, e => { received.push(e.provider_name); Ok(()) }) |> ignore
+  sdk.on(ProviderConfigurationChanged, _ => {
+    api.val += 1
+    Ok(())
+  })
+  |> ignore
+  sdk
+  .client(domain="a")
+  .on(ProviderConfigurationChanged, e => {
+    received.push(e.provider_name)
+    Ok(())
+  })
+  |> ignore
   old.emit_configuration_changed(["flag"])
   try! assert_eq(api.val, 1)
   try! assert_eq(received, ["old"])

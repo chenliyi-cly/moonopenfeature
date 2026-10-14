@@ -11,10 +11,10 @@ pub(all) struct TrackingEvent {
 ///|
 pub fn TrackingEvent::new(
   key : String,
-  value? : Double? = None,
-  details? : EvaluationContext = EvaluationContext::empty(),
+  value~ : Double? = None,
+  details~ : EvaluationContext = EvaluationContext::empty(),
 ) -> Result[TrackingEvent, SdkError] {
-  let event : TrackingEvent = { key, value, details: details.copy() }
+  let event : TrackingEvent = { key, value, details: details.copy(), }
   match event.validate() {
     Err(error) => Err(error)
     Ok(_) => Ok(event)
@@ -51,7 +51,9 @@ pub fn TrackingEvent::validate(self : TrackingEvent) -> Result[Unit, SdkError] {
   match self.value {
     Some(number) =>
       if number.is_nan() || number.is_inf() {
-        return Err(SdkError::new(General, "tracking event value must be finite"))
+        return Err(
+          SdkError::new(General, "tracking event value must be finite"),
+        )
       }
     None => ()
   }

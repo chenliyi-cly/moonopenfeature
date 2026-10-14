@@ -32,11 +32,11 @@ pub struct Provider {
 pub fn Provider::new(
   name : String,
   resolver : (String, FlagType, FlagValue, EvaluationContext) -> Resolution,
-  domain_scoped? : Bool = false,
-  initialize? : ((Provider, EvaluationContext) -> Result[Unit, SdkError])? = None,
-  shutdown? : ((Provider) -> Result[Unit, SdkError])? = None,
-  track? : ((TrackingEvent, EvaluationContext) -> Result[Unit, SdkError])? = None,
-  context_changed? : ((Provider, EvaluationContext, EvaluationContext) -> Result[
+  domain_scoped~ : Bool = false,
+  initialize~ : ((Provider, EvaluationContext) -> Result[Unit, SdkError])? = None,
+  shutdown~ : ((Provider) -> Result[Unit, SdkError])? = None,
+  track~ : ((TrackingEvent, EvaluationContext) -> Result[Unit, SdkError])? = None,
+  context_changed~ : ((Provider, EvaluationContext, EvaluationContext) -> Result[
     Unit,
     SdkError,
   ])? = None,
@@ -268,11 +268,19 @@ pub fn Provider::is_domain_scoped(self : Provider) -> Bool {
 }
 
 ///|
-fn Provider::bind_domain(self : Provider, domain : String) -> Result[Unit, SdkError] {
+fn Provider::bind_domain(
+  self : Provider,
+  domain : String,
+) -> Result[Unit, SdkError] {
   match self.first_domain {
     Some(first) =>
       if self.domain_scoped && first != domain {
-        Err(SdkError::new(General, "domain-scoped provider cannot serve multiple domains"))
+        Err(
+          SdkError::new(
+            General,
+            "domain-scoped provider cannot serve multiple domains",
+          ),
+        )
       } else {
         Ok(())
       }

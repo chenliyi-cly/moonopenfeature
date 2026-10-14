@@ -8,11 +8,15 @@ pub struct HookData {
 
 ///|
 pub fn HookData::new() -> HookData {
-  { entries: Map([]) }
+  { entries: Map([]), }
 }
 
 ///|
-pub fn HookData::set(self : HookData, key : String, value : Json) -> Result[Unit, SdkError] {
+pub fn HookData::set(
+  self : HookData,
+  key : String,
+  value : Json,
+) -> Result[Unit, SdkError] {
   match validate_json(value) {
     Err(error) => Err(error)
     Ok(_) => {

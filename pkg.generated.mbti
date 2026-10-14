@@ -1,0 +1,329 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "chenliyi-cly/moonopenfeature"
+
+// Values
+pub fn copy_json(Json) -> Json
+
+pub fn validate_json(Json) -> Result[Unit, SdkError]
+
+// Errors
+
+// Types and methods
+pub(all) struct BeforeResult {
+  context : EvaluationContext
+  error : SdkError?
+}
+
+pub struct Client {
+  // private fields
+}
+pub fn Client::add_hook(Self, Hook) -> Unit
+pub fn Client::boolean_details(Self, String, Bool, options? : EvaluationOptions) -> Evaluation[Bool]
+pub fn Client::boolean_value(Self, String, Bool, options? : EvaluationOptions) -> Bool
+pub fn Client::clear_hooks(Self) -> Unit
+pub fn Client::context(Self) -> EvaluationContext
+pub fn Client::evaluate(Self, String, FlagValue, options? : EvaluationOptions) -> EvaluationDetails
+pub fn Client::float_details(Self, String, Double, options? : EvaluationOptions) -> Evaluation[Double]
+pub fn Client::float_value(Self, String, Double, options? : EvaluationOptions) -> Double
+pub fn Client::hooks(Self) -> Array[Hook]
+pub fn Client::integer_details(Self, String, Int64, options? : EvaluationOptions) -> Evaluation[Int64]
+pub fn Client::integer_value(Self, String, Int64, options? : EvaluationOptions) -> Int64
+pub fn Client::metadata(Self) -> ClientMetadata
+pub fn Client::off(Self, Int) -> Bool
+pub fn Client::on(Self, EventType, (ProviderEvent) -> Result[Unit, SdkError]) -> Int
+pub fn Client::provider_status(Self) -> ProviderStatus
+pub fn Client::set_context(Self, EvaluationContext) -> Unit
+pub fn Client::string_details(Self, String, String, options? : EvaluationOptions) -> Evaluation[String]
+pub fn Client::string_value(Self, String, String, options? : EvaluationOptions) -> String
+pub fn Client::structure_details(Self, String, Json, options? : EvaluationOptions) -> Evaluation[Json]
+pub fn Client::structure_value(Self, String, Json, options? : EvaluationOptions) -> Json
+pub fn Client::track(Self, TrackingEvent, context? : EvaluationContext, transaction_context? : EvaluationContext) -> Unit
+pub fn Client::track_checked(Self, TrackingEvent, context? : EvaluationContext, transaction_context? : EvaluationContext) -> Result[Unit, SdkError]
+
+pub(all) struct ClientMetadata {
+  name : String
+  version : String
+  domain : String
+}
+
+pub(all) enum ErrorCode {
+  ProviderNotReady
+  ProviderFatal
+  FlagNotFound
+  ParseError
+  TypeMismatch
+  TargetingKeyMissing
+  InvalidContext
+  General
+} derive(Eq)
+pub fn ErrorCode::equal(Self, Self) -> Bool
+pub fn ErrorCode::name(Self) -> String
+pub fn ErrorCode::not_equal(Self, Self) -> Bool
+pub fn ErrorCode::parse(String) -> Self?
+
+pub(all) struct Evaluation[T] {
+  value : T
+  details : EvaluationDetails
+}
+pub fn[T] Evaluation::is_error(Self[T]) -> Bool
+
+pub struct EvaluationContext {
+  // private fields
+}
+pub fn EvaluationContext::attributes(Self) -> Map[String, Json]
+pub fn EvaluationContext::copy(Self) -> Self
+pub fn EvaluationContext::empty() -> Self
+pub fn EvaluationContext::from_attributes(Map[String, Json]) -> Result[Self, SdkError]
+pub fn EvaluationContext::from_json(Json) -> Result[Self, SdkError]
+pub fn EvaluationContext::get(Self, String) -> Json?
+pub fn EvaluationContext::merge(Self, Self) -> Self
+pub fn EvaluationContext::targeting_key(Self) -> String?
+pub fn EvaluationContext::to_json(Self) -> Json
+pub fn EvaluationContext::with_attribute(Self, String, Json) -> Result[Self, SdkError]
+pub fn EvaluationContext::with_targeting_key(Self, String) -> Self
+pub fn EvaluationContext::without_attribute(Self, String) -> Self
+pub fn EvaluationContext::without_targeting_key(Self) -> Self
+
+pub(all) struct EvaluationDetails {
+  flag_key : String
+  value : FlagValue
+  reason : String
+  variant : String?
+  error : SdkError?
+  metadata : FlagMetadata
+}
+pub fn EvaluationDetails::copy(Self) -> Self
+pub fn EvaluationDetails::from_resolution(String, Resolution) -> Self
+pub fn EvaluationDetails::is_error(Self) -> Bool
+pub fn EvaluationDetails::to_json(Self) -> Json
+
+pub struct EvaluationOptions {
+  // private fields
+}
+pub fn EvaluationOptions::context(Self) -> EvaluationContext
+pub fn EvaluationOptions::copy(Self) -> Self
+pub fn EvaluationOptions::hints(Self) -> EvaluationContext
+pub fn EvaluationOptions::hooks(Self) -> Array[Hook]
+pub fn EvaluationOptions::new(context? : EvaluationContext, transaction_context? : EvaluationContext, hooks? : Array[Hook], hints? : EvaluationContext) -> Self
+pub fn EvaluationOptions::transaction_context(Self) -> EvaluationContext
+
+pub struct EventBus {
+  // private fields
+}
+pub fn EventBus::clear(Self) -> Unit
+pub fn EventBus::emit(Self, ProviderEvent) -> Unit
+pub fn EventBus::listener_count(Self) -> Int
+pub fn EventBus::new() -> Self
+pub fn EventBus::off(Self, Int) -> Bool
+pub fn EventBus::on(Self, (ProviderEvent) -> Result[Unit, SdkError], event_type? : EventType?, domain? : String?) -> Int
+pub fn EventBus::take_diagnostics(Self) -> Array[SdkError]
+
+type EventListener
+
+pub(all) enum EventType {
+  ProviderReady
+  ProviderError
+  ProviderStale
+  ProviderConfigurationChanged
+} derive(Eq)
+pub fn EventType::equal(Self, Self) -> Bool
+pub fn EventType::matches_status(Self, ProviderStatus) -> Bool
+pub fn EventType::name(Self) -> String
+pub fn EventType::not_equal(Self, Self) -> Bool
+
+pub struct FlagMetadata {
+  // private fields
+}
+pub fn FlagMetadata::copy(Self) -> Self
+pub fn FlagMetadata::empty() -> Self
+pub fn FlagMetadata::from_values(Map[String, Json]) -> Result[Self, SdkError]
+pub fn FlagMetadata::get(Self, String) -> Json?
+pub fn FlagMetadata::merge(Self, Self) -> Self
+pub fn FlagMetadata::to_json(Self) -> Json
+pub fn FlagMetadata::values(Self) -> Map[String, Json]
+pub fn FlagMetadata::with_value(Self, String, Json) -> Result[Self, SdkError]
+
+pub(all) enum FlagType {
+  Boolean
+  Integer
+  Float
+  String
+  Structure
+} derive(Eq)
+pub fn FlagType::equal(Self, Self) -> Bool
+pub fn FlagType::not_equal(Self, Self) -> Bool
+
+pub(all) enum FlagValue {
+  Boolean(Bool)
+  Integer(Int64)
+  Float(Double)
+  String(String)
+  Structure(Json)
+}
+pub fn FlagValue::as_boolean(Self) -> Bool?
+pub fn FlagValue::as_float(Self) -> Double?
+pub fn FlagValue::as_integer(Self) -> Int64?
+pub fn FlagValue::as_string(Self) -> String?
+pub fn FlagValue::as_structure(Self) -> Json?
+pub fn FlagValue::copy(Self) -> Self
+pub fn FlagValue::flag_type(Self) -> FlagType
+pub fn FlagValue::to_json(Self) -> Json
+pub fn FlagValue::validate(Self) -> Result[Unit, SdkError]
+
+pub struct Hook {
+  // private fields
+}
+pub fn Hook::name(Self) -> String
+pub fn Hook::new(String, types? : Array[FlagType]?, before? : (HookContext, EvaluationContext) -> Result[EvaluationContext?, SdkError], after? : (HookContext, EvaluationDetails, EvaluationContext) -> Result[Unit, SdkError], error? : (HookContext, SdkError, EvaluationContext) -> Result[Unit, SdkError], on_finally? : (HookContext, EvaluationDetails, EvaluationContext) -> Result[Unit, SdkError]) -> Self
+pub fn Hook::supports(Self, FlagType) -> Bool
+
+pub(all) struct HookContext {
+  flag_key : String
+  flag_type : FlagType
+  default_value : FlagValue
+  evaluation_context : EvaluationContext
+  client : ClientMetadata
+  provider_name : String
+  data : HookData
+}
+pub fn HookContext::copy(Self) -> Self
+pub fn HookContext::with_context(Self, EvaluationContext) -> Self
+
+pub struct HookData {
+  // private fields
+}
+pub fn HookData::clear(Self) -> Unit
+pub fn HookData::get(Self, String) -> Json?
+pub fn HookData::keys(Self) -> Array[String]
+pub fn HookData::new() -> Self
+pub fn HookData::remove(Self, String) -> Bool
+pub fn HookData::set(Self, String, Json) -> Result[Unit, SdkError]
+
+pub struct HookPlan {
+  // private fields
+}
+pub fn HookPlan::after(Self, HookContext, EvaluationDetails, EvaluationContext) -> Result[Unit, SdkError]
+pub fn HookPlan::before(Self, HookContext, EvaluationContext) -> BeforeResult
+pub fn HookPlan::length(Self) -> Int
+pub fn HookPlan::names(Self) -> Array[String]
+pub fn HookPlan::new(FlagType, Array[Hook], Array[Hook], Array[Hook], Array[Hook]) -> Self
+pub fn HookPlan::on_error(Self, HookContext, SdkError, EvaluationContext) -> Array[SdkError]
+pub fn HookPlan::run_finally(Self, HookContext, EvaluationDetails, EvaluationContext) -> Array[SdkError]
+
+pub struct Provider {
+  // private fields
+}
+pub fn Provider::add_hook(Self, Hook) -> Unit
+pub fn Provider::binding_domain(Self) -> String?
+pub fn Provider::emit_configuration_changed(Self, Array[String]) -> Unit
+pub fn Provider::emit_error(Self, SdkError) -> Unit
+pub fn Provider::emit_ready(Self) -> Unit
+pub fn Provider::emit_stale(Self, String) -> Unit
+pub fn Provider::events(Self) -> EventBus
+pub fn Provider::hooks(Self) -> Array[Hook]
+pub fn Provider::initialize(Self, EvaluationContext) -> Result[Unit, SdkError]
+pub fn Provider::is_domain_scoped(Self) -> Bool
+pub fn Provider::is_initialized(Self) -> Bool
+pub fn Provider::name(Self) -> String
+pub fn Provider::new(String, (String, FlagType, FlagValue, EvaluationContext) -> Resolution, domain_scoped? : Bool, initialize? : ((Self, EvaluationContext) -> Result[Unit, SdkError])?, shutdown? : ((Self) -> Result[Unit, SdkError])?, track? : ((TrackingEvent, EvaluationContext) -> Result[Unit, SdkError])?, context_changed? : ((Self, EvaluationContext, EvaluationContext) -> Result[Unit, SdkError])?) -> Self
+pub fn Provider::on_context_changed(Self, EvaluationContext, EvaluationContext) -> Result[Unit, SdkError]
+pub fn Provider::resolve(Self, String, FlagType, FlagValue, EvaluationContext) -> Resolution
+pub fn Provider::shutdown(Self) -> Result[Unit, SdkError]
+pub fn Provider::status(Self) -> ProviderStatus
+pub fn Provider::track(Self, TrackingEvent, EvaluationContext) -> Result[Unit, SdkError]
+
+pub(all) struct ProviderEvent {
+  event_type : EventType
+  provider_name : String
+  domain : String?
+  message : String
+  error : SdkError?
+  flags : Array[String]
+}
+pub fn ProviderEvent::copy(Self) -> Self
+pub fn ProviderEvent::new(EventType, String, domain? : String?, message? : String, error? : SdkError?, flags? : Array[String]) -> Self
+
+pub(all) enum ProviderStatus {
+  NotReady
+  Ready
+  Stale
+  Error
+  Fatal
+  Shutdown
+} derive(Eq)
+pub fn ProviderStatus::equal(Self, Self) -> Bool
+pub fn ProviderStatus::evaluation_error(Self) -> SdkError?
+pub fn ProviderStatus::name(Self) -> String
+pub fn ProviderStatus::not_equal(Self, Self) -> Bool
+
+pub(all) struct Resolution {
+  value : FlagValue
+  reason : String
+  variant : String?
+  error : SdkError?
+  metadata : FlagMetadata
+}
+pub fn Resolution::checked(Self, FlagType, FlagValue) -> Self
+pub fn Resolution::failure(FlagValue, SdkError) -> Self
+pub fn Resolution::success(FlagValue, reason? : String, variant? : String?, metadata? : FlagMetadata) -> Self
+
+pub struct Sdk {
+  // private fields
+}
+pub fn Sdk::add_hook(Self, Hook) -> Unit
+pub fn Sdk::clear_domain(Self, String) -> Result[Unit, SdkError]
+pub fn Sdk::clear_hooks(Self) -> Unit
+pub fn Sdk::client(Self, domain? : String, name? : String, version? : String) -> Client
+pub fn Sdk::context(Self) -> EvaluationContext
+pub fn Sdk::events(Self) -> EventBus
+pub fn Sdk::hooks(Self) -> Array[Hook]
+pub fn Sdk::is_closed(Self) -> Bool
+pub fn Sdk::new() -> Self
+pub fn Sdk::off(Self, Int) -> Bool
+pub fn Sdk::on(Self, EventType, (ProviderEvent) -> Result[Unit, SdkError]) -> Int
+pub fn Sdk::provider(Self, domain? : String) -> Provider
+pub fn Sdk::provider_status(Self, domain? : String) -> ProviderStatus
+pub fn Sdk::registered_domains(Self) -> Array[String]
+pub fn Sdk::set_context(Self, EvaluationContext) -> Result[Unit, SdkError]
+pub fn Sdk::set_provider(Self, Provider, domain? : String) -> Result[Unit, SdkError]
+pub fn Sdk::shutdown(Self) -> Result[Unit, SdkError]
+pub fn Sdk::take_diagnostics(Self) -> Array[SdkError]
+
+pub(all) struct SdkError {
+  code : ErrorCode
+  message : String
+} derive(Eq)
+pub fn SdkError::equal(Self, Self) -> Bool
+pub fn SdkError::new(ErrorCode, String) -> Self
+pub fn SdkError::not_equal(Self, Self) -> Bool
+pub fn SdkError::to_json(Self) -> Json
+
+pub(all) enum StandardReason {
+  Static
+  Default
+  TargetingMatch
+  Split
+  Cached
+  Disabled
+  Unknown
+  Stale
+  Error
+} derive(Eq)
+pub fn StandardReason::equal(Self, Self) -> Bool
+pub fn StandardReason::name(Self) -> String
+pub fn StandardReason::not_equal(Self, Self) -> Bool
+pub fn StandardReason::parse(String) -> Self?
+
+pub(all) struct TrackingEvent {
+  key : String
+  value : Double?
+  details : EvaluationContext
+}
+pub fn TrackingEvent::copy(Self) -> Self
+pub fn TrackingEvent::new(String, value? : Double?, details? : EvaluationContext) -> Result[Self, SdkError]
+pub fn TrackingEvent::to_json(Self) -> Json
+pub fn TrackingEvent::validate(Self) -> Result[Unit, SdkError]
+
+// Type aliases
+
+// Traits
