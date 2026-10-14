@@ -131,3 +131,18 @@ test "shutdown is terminal resets SDK state and calls each provider once" {
   try! assert_true(sdk.set_context(@moonopenfeature.EvaluationContext::empty()) is Err(_))
   try! assert_true(sdk.set_provider(@moonopenfeature.Provider::new("new", (_, _, d, _) => @moonopenfeature.Resolution::success(d))) is Err(_))
 }
+
+///|
+test "event domain recipients are frozen before API observers replace providers" {
+  let sdk = @moonopenfeature.Sdk::new()
+  let client = sdk.client(domain="a")
+  let old = @moonopenfeature.Provider::new("old", (_, _, d, _) => @moonopenfeature.Resolution::success(d))
+  let next = @moonopenfeature.Provider::new("next", (_, _, d, _) => @moonopenfeature.Resolution::success(d))
+  sdk.set_provider(old, domain="a").unwrap()
+  let received : Array[String] = []
+  client.on(ProviderConfigurationChanged, e => { received.push(e.provider_name); Ok(()) }) |> ignore
+  sdk.on(ProviderConfigurationChanged, _ => sdk.set_provider(next, domain="a")) |> ignore
+  old.emit_configuration_changed(["a"])
+  try! assert_eq(received, ["old"])
+  try! assert_eq(sdk.provider(domain="a").name(), "next")
+}

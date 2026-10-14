@@ -61,13 +61,19 @@ fn Sdk::watch(self : Sdk, provider : Provider) -> Unit {
     }
   }
   let id = provider.events().on(event => {
-    self.api_bus.emit(event.copy())
+    // Freeze domain ownership before observers can mutate bindings. API
+    // callbacks may replace the provider, but cannot erase this event's route.
     let domains = self.known_domains.keys().to_array()
     domains.sort()
+    let recipients : Array[String] = []
     for domain in domains {
       if physical_equal(self.provider(domain~), provider) {
-        self.bus.emit({ ..event.copy(), domain: Some(domain) })
+        recipients.push(domain)
       }
+    }
+    self.api_bus.emit(event.copy())
+    for domain in recipients {
+      self.bus.emit({ ..event.copy(), domain: Some(domain) })
     }
     Ok(())
   })
