@@ -18,7 +18,7 @@ def main():
     parser.add_argument("--report", type=pathlib.Path)
     args = parser.parse_args()
     report = {"results": [], "native_execution": "requested" if args.native else "not requested"}
-    report["production_lines"] = {p.name: len(p.read_text(encoding="utf-8").splitlines())
+    report["production_lines"] = {p.name: sum(1 for line in p.read_text(encoding="utf-8").splitlines() if line.strip() and not line.lstrip().startswith("//"))
                                   for p in sorted(ROOT.glob("*.mbt"))
                                   if not p.name.endswith(("_test.mbt", "_wbtest.mbt"))}
     report["production_total"] = sum(report["production_lines"].values())
