@@ -1,0 +1,11 @@
+initialize context: {"region":"sdk-region","application":"store","targetingKey":"sdk-user"}
+not ready: {"flagKey":"express-checkout","value":false,"reason":"ERROR","flagMetadata":{},"errorCode":"PROVIDER_NOT_READY","errorMessage":"provider is not ready"}
+boolean: {"flagKey":"express-checkout","value":true,"reason":"TARGETING_MATCH","flagMetadata":{"source":"injected-catalog","revision":7},"variant":"gold-eu"}
+effective context: {"region":"eu-west","application":"store","requestId":"req-42","plan":"gold","basketSize":3,"targetingKey":"customer-17"}
+integer: {"flagKey":"order-sequence","value":9007199254740993,"reason":"STATIC","flagMetadata":{"source":"injected-catalog","revision":7}}
+float: {"flagKey":"discount","value":0.15,"reason":"STATIC","flagMetadata":{"source":"injected-catalog","revision":7}}
+string: {"flagKey":"banner","value":"Gold delivery","reason":"STATIC","flagMetadata":{"source":"injected-catalog","revision":7}}
+structure: {"flagKey":"shipping","value":{"methods":["express","standard"],"freeAbove":50},"reason":"STATIC","flagMetadata":{"source":"injected-catalog","revision":7}}
+missing default: {"flagKey":"missing","value":42,"reason":"ERROR","flagMetadata":{},"errorCode":"FLAG_NOT_FOUND","errorMessage":"catalog has no flag: missing"}
+type mismatch default: {"flagKey":"wrong-type","value":false,"reason":"ERROR","flagMetadata":{},"errorCode":"TYPE_MISMATCH","errorMessage":"provider returned a different flag type"}
+provider error default: {"flagKey":"backend-error","value":"Safe banner","reason":"ERROR","flagMetadata":{},"errorCode":"PARSE_ERROR","errorMessage":"catalog revision is malformed"}

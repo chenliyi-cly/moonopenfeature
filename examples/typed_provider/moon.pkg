@@ -1,0 +1,5 @@
+import {
+  "chenliyi-cly/moonopenfeature" @feature,
+}
+
+pkgtype(kind: "executable")
