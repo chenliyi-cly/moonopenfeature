@@ -151,6 +151,10 @@ pub fn Provider::track(
   event : TrackingEvent,
   context : EvaluationContext,
 ) -> Result[Unit, SdkError] {
+  match event.validate() {
+    Err(error) => return Err(error)
+    Ok(_) => ()
+  }
   match self.track_callback {
     None => Ok(())
     Some(callback) => callback(event.copy(), context.copy())

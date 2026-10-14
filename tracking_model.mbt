@@ -14,19 +14,11 @@ pub fn TrackingEvent::new(
   value? : Double? = None,
   details? : EvaluationContext = EvaluationContext::empty(),
 ) -> Result[TrackingEvent, SdkError] {
-  if key == "" {
-    return Err(SdkError::new(General, "tracking event key must not be empty"))
+  let event : TrackingEvent = { key, value, details: details.copy() }
+  match event.validate() {
+    Err(error) => Err(error)
+    Ok(_) => Ok(event)
   }
-  match value {
-    Some(number) =>
-      if number.is_nan() || number.is_inf() {
-        return Err(
-          SdkError::new(General, "tracking event value must be finite"),
-        )
-      }
-    None => ()
-  }
-  Ok({ key, value, details: details.copy(), })
 }
 
 ///|
@@ -47,4 +39,21 @@ pub fn TrackingEvent::to_json(self : TrackingEvent) -> Json {
     None => ()
   }
   Json::object(fields)
+}
+
+///|
+/// Validate raw public construction as well as constructor-created events.
+/// Providers must not receive non-finite measures through a bypassed factory.
+pub fn TrackingEvent::validate(self : TrackingEvent) -> Result[Unit, SdkError] {
+  if self.key == "" {
+    return Err(SdkError::new(General, "tracking event key must not be empty"))
+  }
+  match self.value {
+    Some(number) =>
+      if number.is_nan() || number.is_inf() {
+        return Err(SdkError::new(General, "tracking event value must be finite"))
+      }
+    None => ()
+  }
+  Ok(())
 }

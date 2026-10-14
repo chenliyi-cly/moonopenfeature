@@ -131,3 +131,19 @@ test "tracking uses context layers but not evaluation hooks and errors are diagn
   try! assert_eq(seen.length(), 2)
   try! assert_eq(sdk.take_diagnostics().length(), 1)
 }
+
+///|
+test "raw tracking construction cannot bypass validation at callback boundary" {
+  let sdk = @moonopenfeature.Sdk::new()
+  let client = sdk.client()
+  let calls = Ref(0)
+  sdk.set_provider(@moonopenfeature.Provider::new("tracking", (_, _, d, _) => @moonopenfeature.Resolution::success(d),
+    track=Some((_, _) => { calls.val += 1; Ok(()) }))).unwrap()
+  let bad : @moonopenfeature.TrackingEvent = { key: "", value: None, details: @moonopenfeature.EvaluationContext::empty() }
+  client.track(bad)
+  try! assert_eq(calls.val, 0)
+  try! assert_eq(sdk.take_diagnostics().length(), 1)
+  let nonfinite : @moonopenfeature.TrackingEvent = { key: "event", value: Some(1.0 / 0.0), details: @moonopenfeature.EvaluationContext::empty() }
+  try! assert_true(client.track_checked(nonfinite) is Err(_))
+  try! assert_eq(calls.val, 0)
+}
