@@ -1,0 +1,13 @@
+lifecycle: PROVIDER_READY provider=observed-adapter domain=checkout
+success hooks: sdk.before > client.before > invocation.before > provider.before > provider.after > invocation.after > client.after > sdk.after > provider.on_finally:TARGETING_MATCH > invocation.on_finally:TARGETING_MATCH > client.on_finally:TARGETING_MATCH > sdk.on_finally:TARGETING_MATCH
+success details: {"flagKey":"express-checkout","value":true,"reason":"TARGETING_MATCH","flagMetadata":{},"variant":"beta"}
+observer diagnostic: {"code":"GENERAL","message":"completion observer sink unavailable"}
+error hooks: sdk.before > client.before > invocation.before > provider.before > provider.error:FLAG_NOT_FOUND > invocation.error:FLAG_NOT_FOUND > client.error:FLAG_NOT_FOUND > sdk.error:FLAG_NOT_FOUND > provider.on_finally:ERROR > invocation.on_finally:ERROR > client.on_finally:ERROR > sdk.on_finally:ERROR
+error details: {"flagKey":"missing","value":false,"reason":"ERROR","flagMetadata":{},"errorCode":"FLAG_NOT_FOUND","errorMessage":"missing flag: missing"}
+observer diagnostic: {"code":"GENERAL","message":"error observer sink unavailable"}
+observer diagnostic: {"code":"GENERAL","message":"completion observer sink unavailable"}
+tracking payload: {"key":"purchase","details":{"orderId":"order-42","items":["book","pen"]},"value":79.5}
+tracking context: {"region":"eu-west","requestId":"req-42","service":"checkout","targetingKey":"customer-17"}
+tracking failure: {"code":"GENERAL","message":"analytics transport unavailable"}
+lifecycle: PROVIDER_CONFIGURATION_CHANGED provider=observed-adapter domain=checkout
+no-throw tracking diagnostic: {"code":"GENERAL","message":"analytics transport unavailable"}
