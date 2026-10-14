@@ -1,0 +1,12 @@
+initial: alpha=enterprise beta=enterprise guest=classic
+alpha ready: enterprise-shared@tenant-alpha
+alpha ready: alpha-v2@tenant-alpha
+replace alpha: alpha=modern beta=enterprise guest=classic
+shutdown: enterprise-shared
+clear beta: alpha=modern beta=classic guest=classic
+shutdown: default-v1
+replace default: alpha=modern beta=accessible guest=accessible
+shutdown: alpha-v2
+clear alpha: alpha=accessible beta=accessible guest=accessible
+shutdown: default-v2
+after shutdown: {"flagKey":"checkout-theme","value":"safe","reason":"ERROR","flagMetadata":{},"errorCode":"PROVIDER_NOT_READY","errorMessage":"SDK is shut down"}
