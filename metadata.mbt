@@ -38,8 +38,13 @@ fn FlagMetadata::set(
       if number.is_nan() || number.is_inf() {
         Err(SdkError::new(ParseError, "metadata number must be finite"))
       } else {
-        self.values[key] = value
-        Ok(())
+        match validate_json(value) {
+          Err(_) => Err(SdkError::new(ParseError, "metadata number has an invalid JSON representation"))
+          Ok(_) => {
+            self.values[key] = value
+            Ok(())
+          }
+        }
       }
     _ =>
       Err(

@@ -36,3 +36,17 @@ test "metadata snapshots and scalar overlay are independent" {
   assert_true(first.get("engine") == Some(Json::string("one")))
   assert_true(first.merge(second).get("engine") == Some(Json::string("two")))
 }
+
+///|
+test "metadata validates raw numeric representation and preserves exact integers" {
+  let bad = Json::number(1.0, repr="not-json")
+  try! assert_true(@moonopenfeature.validate_json(bad) is Err(_))
+  try! assert_true(@moonopenfeature.FlagMetadata::from_values({ "bad": bad }) is Err(_))
+  let good = @moonopenfeature.FlagMetadata::from_values({
+    "large": Json::number(9007199254740992.0, repr="9007199254740993")
+  }).unwrap()
+  try! assert_eq(good.to_json().stringify(), "{\"large\":9007199254740993}")
+  try! assert_true(@moonopenfeature.validate_json(good.to_json()) is Ok(_))
+  try! assert_true(good.with_value("bad", bad) is Err(_))
+  try! assert_eq(good.values().length(), 1)
+}
