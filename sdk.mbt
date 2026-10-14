@@ -3,7 +3,7 @@
 pub struct Sdk {
   priv bindings : Map[String, Provider]
   priv known_domains : Map[String, Bool]
-  priv watched : Array[(Provider, Int)]
+  priv watched : Array[(Provider, Int32)]
   priv bus : EventBus
   priv api_bus : EventBus
   priv hooks : Array[Hook]
@@ -16,10 +16,20 @@ pub struct Sdk {
 ///|
 pub fn Sdk::new() -> Sdk {
   let sdk : Sdk = {
-    bindings: Map([]), known_domains: Map([]), watched: [], bus: EventBus::new(), api_bus: EventBus::new(), hooks: [],
-    context: EvaluationContext::empty(), diagnostics: [], mutating: false, closed: false,
+    bindings: Map([]),
+    known_domains: Map([]),
+    watched: [],
+    bus: EventBus::new(),
+    api_bus: EventBus::new(),
+    hooks: [],
+    context: EvaluationContext::empty(),
+    diagnostics: [],
+    mutating: false,
+    closed: false,
   }
-  let noop = Provider::new("No-op", (_, _, default, _) => Resolution::success(default, reason="DEFAULT"))
+  let noop = Provider::new("No-op", (_, _, default, _) => {
+    Resolution::success(default, reason="DEFAULT")
+  })
   noop.bind_domain("") |> ignore
   sdk.bindings[""] = noop
   sdk.known_domains[""] = true
@@ -34,7 +44,7 @@ pub fn Sdk::is_closed(self : Sdk) -> Bool {
 }
 
 ///|
-pub fn Sdk::provider(self : Sdk, domain? : String = "") -> Provider {
+pub fn Sdk::provider(self : Sdk, domain~ : String = "") -> Provider {
   match self.bindings.get(domain) {
     Some(provider) => provider
     None => self.bindings[""]
@@ -42,7 +52,10 @@ pub fn Sdk::provider(self : Sdk, domain? : String = "") -> Provider {
 }
 
 ///|
-pub fn Sdk::provider_status(self : Sdk, domain? : String = "") -> ProviderStatus {
+pub fn Sdk::provider_status(
+  self : Sdk,
+  domain~ : String = "",
+) -> ProviderStatus {
   self.provider(domain~).status()
 }
 
@@ -60,23 +73,25 @@ fn Sdk::watch(self : Sdk, provider : Provider) -> Unit {
       return
     }
   }
-  let id = provider.events().on(event => {
-    // Freeze domain ownership before observers can mutate bindings. API
-    // callbacks may replace the provider, but cannot erase this event's route.
-    let domains = self.known_domains.keys().to_array()
-    domains.sort()
-    let recipients : Array[String] = []
-    for domain in domains {
-      if physical_equal(self.provider(domain~), provider) {
-        recipients.push(domain)
+  let id = provider
+    .events()
+    .on_internal(event => {
+      // Freeze domain ownership before observers can mutate bindings. API
+      // callbacks may replace the provider, but cannot erase this event's route.
+      let domains = self.known_domains.keys().to_array()
+      domains.sort()
+      let recipients : Array[String] = []
+      for domain in domains {
+        if physical_equal(self.provider(domain~), provider) {
+          recipients.push(domain)
+        }
       }
-    }
-    self.api_bus.emit(event.copy())
-    for domain in recipients {
-      self.bus.emit({ ..event.copy(), domain: Some(domain) })
-    }
-    Ok(())
-  })
+      self.api_bus.emit(event.copy())
+      for domain in recipients {
+        self.bus.emit({ ..event.copy(), domain: Some(domain), })
+      }
+      Ok(())
+    })
   self.watched.push((provider, id))
 }
 
@@ -114,12 +129,23 @@ fn Sdk::retire(self : Sdk, provider : Provider) -> Unit {
 ///|
 /// Replacing a domain never shuts down a provider still used by another domain.
 /// Failed initialization leaves the new binding's error/not-ready state observable.
-pub fn Sdk::set_provider(self : Sdk, provider : Provider, domain? : String = "") -> Result[Unit, SdkError] {
+pub fn Sdk::set_provider(
+  self : Sdk,
+  provider : Provider,
+  domain~ : String = "",
+) -> Result[Unit, SdkError] {
   if self.closed || self.mutating {
-    return Err(SdkError::new(General, "SDK is closed or a lifecycle mutation is in progress"))
+    return Err(
+      SdkError::new(
+        General,
+        "SDK is closed or a lifecycle mutation is in progress",
+      ),
+    )
   }
   if provider.status() == Shutdown {
-    return Err(SdkError::new(ProviderNotReady, "a shut down provider cannot be rebound"))
+    return Err(
+      SdkError::new(ProviderNotReady, "a shut down provider cannot be rebound"),
+    )
   }
   match provider.bind_domain(domain) {
     Err(error) => return Err(error)
@@ -148,7 +174,12 @@ pub fn Sdk::clear_domain(self : Sdk, domain : String) -> Result[Unit, SdkError] 
     return Err(SdkError::new(General, "the default domain cannot be removed"))
   }
   if self.closed || self.mutating {
-    return Err(SdkError::new(General, "SDK is closed or a lifecycle mutation is in progress"))
+    return Err(
+      SdkError::new(
+        General,
+        "SDK is closed or a lifecycle mutation is in progress",
+      ),
+    )
   }
   self.mutating = true
   match self.bindings.get(domain) {
@@ -168,9 +199,17 @@ pub fn Sdk::context(self : Sdk) -> EvaluationContext {
 }
 
 ///|
-pub fn Sdk::set_context(self : Sdk, context : EvaluationContext) -> Result[Unit, SdkError] {
+pub fn Sdk::set_context(
+  self : Sdk,
+  context : EvaluationContext,
+) -> Result[Unit, SdkError] {
   if self.closed || self.mutating {
-    return Err(SdkError::new(General, "SDK is closed or a lifecycle mutation is in progress"))
+    return Err(
+      SdkError::new(
+        General,
+        "SDK is closed or a lifecycle mutation is in progress",
+      ),
+    )
   }
   self.mutating = true
   let old = self.context.copy()
@@ -288,7 +327,7 @@ pub fn Sdk::on(
   self : Sdk,
   event_type : EventType,
   callback : (ProviderEvent) -> Result[Unit, SdkError],
-) -> Int {
+) -> Int32 {
   let id = self.api_bus.on(callback, event_type=Some(event_type))
   let provider = self.provider()
   if !self.closed && event_type.matches_status(provider.status()) {
@@ -301,6 +340,6 @@ pub fn Sdk::on(
 }
 
 ///|
-pub fn Sdk::off(self : Sdk, id : Int) -> Bool {
+pub fn Sdk::off(self : Sdk, id : Int32) -> Bool {
   self.api_bus.off(id)
 }

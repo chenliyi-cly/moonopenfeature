@@ -33,10 +33,10 @@ pub(all) struct ProviderEvent {
 pub fn ProviderEvent::new(
   event_type : EventType,
   provider_name : String,
-  domain? : String? = None,
-  message? : String = "",
-  error? : SdkError? = None,
-  flags? : Array[String] = [],
+  domain~ : String? = None,
+  message~ : String = "",
+  error~ : SdkError? = None,
+  flags~ : Array[String] = [],
 ) -> ProviderEvent {
   { event_type, provider_name, domain, message, error, flags: flags.copy(), }
 }
@@ -48,6 +48,7 @@ pub fn ProviderEvent::copy(self : ProviderEvent) -> ProviderEvent {
 
 ///|
 struct EventListener {
+  internal : Bool
   event_type : EventType?
   domain : String?
   callback : (ProviderEvent) -> Result[Unit, SdkError]
@@ -57,8 +58,8 @@ struct EventListener {
 /// A synchronous, ordered event bus. Listener snapshots make changes in callbacks
 /// effective for the next event, not partway through the current dispatch.
 pub struct EventBus {
-  priv mut next_id : Int
-  priv listeners : Map[Int, EventListener]
+  priv mut next_id : Int32
+  priv listeners : Map[Int32, EventListener]
   priv mut dispatching : Bool
   priv pending : Array[ProviderEvent]
   priv diagnostics : Array[SdkError]
@@ -79,24 +80,24 @@ pub fn EventBus::new() -> EventBus {
 pub fn EventBus::on(
   self : EventBus,
   callback : (ProviderEvent) -> Result[Unit, SdkError],
-  event_type? : EventType? = None,
-  domain? : String? = None,
-) -> Int {
+  event_type~ : EventType? = None,
+  domain~ : String? = None,
+) -> Int32 {
   let id = self.next_id
   self.next_id += 1
-  self.listeners[id] = { event_type, domain, callback, }
+  self.listeners[id] = { internal: false, event_type, domain, callback, }
   id
 }
 
 ///|
-pub fn EventBus::off(self : EventBus, id : Int) -> Bool {
+pub fn EventBus::off(self : EventBus, id : Int32) -> Bool {
   let found = self.listeners.contains(id)
   self.listeners.remove(id)
   found
 }
 
 ///|
-pub fn EventBus::listener_count(self : EventBus) -> Int {
+pub fn EventBus::listener_count(self : EventBus) -> Int32 {
   self.listeners.length()
 }
 
@@ -118,10 +119,14 @@ pub fn EventBus::emit(self : EventBus, event : ProviderEvent) -> Unit {
     let ids = self.listeners.keys().to_array()
     ids.sort()
     let snapshot : Array[EventListener] = []
-    for id in ids {
-      match self.listeners.get(id) {
-        Some(listener) => snapshot.push(listener)
-        None => ()
+    // SDK ownership routing runs before application observers, even those
+    // registered before binding. Ordinary observers retain registration order.
+    for internal in [true, false] {
+      for id in ids {
+        match self.listeners.get(id) {
+          Some(listener) => if listener.internal == internal { snapshot.push(listener) }
+          None => ()
+        }
       }
     }
     for listener in snapshot {
@@ -169,9 +174,22 @@ pub fn EventBus::take_diagnostics(self : EventBus) -> Array[SdkError] {
 ///|
 /// Only events corresponding to the current state receive immediate delivery.
 /// Configuration changes are notifications, not a replayable lifecycle state.
-pub fn EventType::matches_status(self : EventType, status : ProviderStatus) -> Bool {
+pub fn EventType::matches_status(
+  self : EventType,
+  status : ProviderStatus,
+) -> Bool {
   match (self, status) {
-    (ProviderReady, Ready) | (ProviderError, Error | Fatal) | (ProviderStale, Stale) => true
+    (ProviderReady, Ready)
+    | (ProviderError, Error | Fatal)
+    | (ProviderStale, Stale) => true
     _ => false
   }
+}
+
+///|
+/// Package-private subscription for ownership routing, never application work.
+fn EventBus::on_internal(self : EventBus, callback : (ProviderEvent) -> Result[Unit, SdkError]) -> Int32 {
+  let id = self.on(callback)
+  self.listeners[id] = { ..self.listeners[id], internal: true }
+  id
 }
