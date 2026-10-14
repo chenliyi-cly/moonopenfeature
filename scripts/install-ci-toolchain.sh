@@ -15,6 +15,8 @@ for name in ['linux', 'core']:
 PY
 tar xzf "$root/linux.tar.gz" -C "$root"
 tar xzf "$root/core.tar.gz" -C "$root/lib"
+# Official archive modes may omit executable bits; restore utility execution.
+find "$root/bin" -type f ! -name '*.wasm' -exec chmod u+x {} +
 export MOON_HOME="$root" MOON_TOOLCHAIN_ROOT="$root"
 export PATH="$root/bin:$PATH"
 moon -C "$root/lib/core" bundle --all --warn-list '-a'
