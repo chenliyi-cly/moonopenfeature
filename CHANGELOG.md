@@ -1,8 +1,14 @@
-# Changelog
+# 更新日志
 
-## Unreleased — 0.1.0 集成中
+## 0.1.1 — 2026-10-14
 
-日期：2026-10-14。`moon.mod` 当前版本为 0.1.0，不表示此版本已发布、已通过 CI 或已完成官方符合性验证。以下记录基于当前源码及本轮文档更新，不宣称完整历史审计。
+- 将主 README 和三个示例的使用说明完整改为中文，保留公共 API 名称及可运行代码。
+- 同步安装说明和包版本，修正 0.1.0 更新日志中已过时的集成阶段描述。
+- 本次仅更新文档和版本元数据，不改变核心实现或公共接口；保留已发布的 0.1.0。
+
+## 0.1.0 — 2026-10-14
+
+首个公开版本，已发布 GitHub Release 和 MoonCakes。以下保留首次实现的能力与边界；发布并不表示完整 OpenFeature 规范符合性。
 
 ### Added
 
@@ -16,7 +22,7 @@
 
 ### Explicit limitations / deviations
 
-- 不声明 full OpenFeature conformance、官方认证、官方 suite 全通过或已发布。
+- 不声明 full OpenFeature conformance、官方认证、官方 suite 全通过。
 - HookData 仅 JSON，不满足任意类型值；context/hints 无原生 Datetime。
 - 不支持 async/nonblocking evaluation、自动 transaction propagation 或 static-context reconciliation。显式 transaction 参数不是自动 carrier。
 - Callback 的 Result/Resolution 错误可处理；panic、abort 和阻塞 callback 不捕获或隔离。
@@ -28,7 +34,7 @@
 
 ### Verification boundary
 
-仓库已有 value/context/JSON/metadata/options/resolution/provider/hooks/events/tracking-model 测试源码。此文档任务未运行测试、格式化或接口生成；集成主线程需记录真实结果。不能由本文件推定任一 target 构建或运行已通过。
+0.1.0 的 Linux CI 已完成 wasm-gc、wasm、js、native 的严格检查、构建、各 81 项测试与三个示例运行。本地 Windows 仅执行前三个目标及 native 静态检查。记录见 https://github.com/chenliyi-cly/moonopenfeature/actions/runs/38513107154 。
 
 ### Correctness hardening
 

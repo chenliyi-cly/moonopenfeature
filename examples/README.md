@@ -1,15 +1,12 @@
-# Executable downstream examples
+# 可运行的下游示例
 
-These are three independent `is-main` packages in the SDK module. Each imports
-`chenliyi-cly/moonopenfeature` explicitly and uses only its public API. They use
-in-memory, application-owned callbacks; no credentials, vendor services,
-registry access, process-global configuration, or network calls are required.
-The SDK routes and validates decisions but does not implement a decision engine.
+本目录包含三个独立的可执行包，均显式导入 `chenliyi-cly/moonopenfeature`，仅调用 SDK 的公共 API。
+示例使用应用自行提供的内存回调，不需要凭据、厂商服务、运行时注册表访问、进程全局配置或网络调用。
+SDK 负责路由与校验供应方决策，不实现决策引擎。
 
-Each program aborts on a violated invariant. A successful exit therefore checks
-the scenario rather than merely printing illustrative text.
+每个程序都会在断言不成立时终止，因此正常退出表示工作流中的约束经过实际检查，而不只是打印演示文字。
 
-## Run from the repository root
+## 在仓库根目录运行
 
 ```sh
 moon run examples/multitenant --deny-warn
@@ -17,70 +14,53 @@ moon run examples/typed_provider --deny-warn
 moon run examples/observability --deny-warn
 ```
 
-The module's preferred target is wasm-gc. To check JavaScript portability, append
-`--target js` to each command. No root manifest changes, `moon info`, or
-whole-module formatting are needed. The `run-output.txt` in each package contains
-the captured wasm-gc stdout from the local run; JSON object field order is not
-part of the API contract.
+模块默认目标为 wasm-gc。验证 JavaScript 可移植性时，可在每条命令后添加 `--target js`。
+运行示例不需要修改根模块配置，也不需要先运行 `moon info` 或对整个模块格式化。
+各包的 `run-output.txt` 保存了本地 wasm-gc 运行捕获的标准输出；JSON 对象字段顺序不属于 API 约束。
 
-## 1. Multitenant domain routing and replacement
+## 1. 多租户域路由与供应方替换
 
-`multitenant/main.mbt` creates live clients for two tenants and an unbound guest.
-A shared enterprise provider serves both tenants, while the guest uses the
-configured default provider. The scenario then:
+`multitenant/main.mbt` 为两个租户和一个未绑定域的访客创建客户端。
+两个租户共享企业供应方，访客使用已配置的默认供应方。示例依次检查：
 
-1. Replaces only alpha's provider without changing either client's identity.
-2. Checks the shared provider remains Ready while beta still uses it.
-3. Clears beta's binding, returns beta to the default, and checks the shared
-   provider shuts down exactly once after its last binding disappears.
-4. Replaces the default and verifies fallback clients follow it while alpha's
-   dedicated provider remains unaffected.
-5. Clears alpha, unsubscribes its ready observer, and shuts down the SDK twice.
-   Shutdown callbacks still run once per provider, and a post-shutdown evaluation
-   returns its safe default with `PROVIDER_NOT_READY` diagnostics.
+1. 只替换 alpha 的供应方，不改变两个客户端的身份。
+2. beta 仍使用共享供应方时，该供应方保持 Ready。
+3. 清除 beta 的绑定，使其回退到默认供应方；共享供应方在最后一个绑定移除后只关闭一次。
+4. 替换默认供应方，回退客户端跟随变化，alpha 的独立供应方不受影响。
+5. 清除 alpha 的绑定，注销其就绪观察者，并调用两次 SDK 关闭操作；每个供应方的关闭回调仍只执行一次。关闭后的评估返回安全默认值和 `PROVIDER_NOT_READY` 诊断。
 
-The ready observer checks immediate replay for the current provider and the
-subsequent replacement notification with the tenant's domain.
+就绪观察者还校验注册时的当前状态通知，以及替换供应方后的带租户域通知。
 
-## 2. Injected typed provider, context, defaults and diagnostics
+## 2. 注入类型化供应方、上下文、默认值与诊断
 
-`typed_provider/main.mbt` injects a local catalog and a contextual boolean rule.
-Its explicit initializer initially leaves the provider NotReady, verifying that
-an `Ok` initializer return is not a readiness event and the resolver is not called.
-The provider then explicitly emits readiness.
+`typed_provider/main.mbt` 注入本地配置目录和依赖上下文的布尔决策。
+显式初始化回调最初让供应方保持 NotReady，以校验返回 Ok 并不代表已就绪，且此时解析回调不会执行。
+随后供应方显式发出就绪事件。
 
-The application evaluates Boolean, Int64, Double, String and structured JSON
-flags, retaining metadata and variant diagnostics. The Int64 value
-`9007199254740993` remains exact in both the typed result and serialized output.
-The callback inspects the effective context and asserts this precedence:
+应用评估 Boolean、Int64、Double、String 和结构化 JSON 开关，并保留 metadata 与 variant 信息。
+Int64 值 `9007199254740993` 在类型化结果和序列化输出中均保持精确。
+供应方回调检查最终上下文，并断言以下覆盖顺序：
 
-`SDK < transaction < client < invocation`
+**SDK < 显式事务上下文 < 客户端 < 本次调用**
 
-Nonconflicting attributes survive each merge, and source contexts remain intact.
-Missing flags, provider type mismatches and explicit provider parse errors return
-the caller's defaults with their original error codes in evaluation details.
-Those errors do not become SDK observer diagnostics.
+不冲突的属性在每次合并后保留，原始上下文不被修改。
+不存在的开关、供应方返回类型不匹配、供应方显式返回解析错误时，调用者得到默认值，原始错误码保留在评估详情中。
+这些评估错误不会被混同为 SDK 观察者诊断。
 
-## 3. Hooks, lifecycle events and tracking observability
+## 3. 钩子、生命周期事件与业务事件观测
 
-`observability/main.mbt` installs Boolean hooks at SDK, client, invocation and
-provider scopes. It verifies forward before ordering, reverse success/error and
-completion ordering, and before-hook context flowing to the resolver. `on_finally`
-is the public completion callback name; the client orchestrates `HookPlan` stages.
+`observability/main.mbt` 分别在 SDK、客户端、本次调用和供应方上安装布尔类型钩子。
+示例校验 before 正序，成功/错误/完成阶段逆序，以及 before 钩子的上下文能传入解析回调。
+公开完成回调名为 `on_finally`；客户端负责编排 `HookPlan` 的各阶段。
 
-Every hook uses the same scratch key in `HookContext.data`; assertions establish
-per-hook isolation, persistence across stages, and reset for each evaluation.
-An invocation observer deliberately returns errors, demonstrating that:
+每个钩子在 `HookContext.data` 中使用相同暂存键，断言验证钩子之间相互隔离、同一次评估的不同阶段保留数据、每次新评估重置数据。
+调用层观察者故意返回错误，用于证明：
 
-- completion observer failure does not replace a successful value;
-- error observer failure does not hide the original missing-flag diagnostic;
-- other observers still run, and their errors are available once through
-  `Sdk.take_diagnostics()`.
+- 完成观察者失败不会替换成功结果；
+- 错误观察者失败不会覆盖原始开关缺失诊断；
+- 其他观察者仍会执行，其错误可通过 `Sdk.take_diagnostics()` 取出一次。
 
-The provider records a purchase payload and the separately merged tracking
-context. Assertions check that tracking runs no evaluation hooks and does not
-inherit an earlier evaluation's hook-injected cohort. `track_checked` exposes an
-analytics transport error as a Result. Standard Unit-returning `track` records
-that same failure in SDK diagnostics without throwing. Lifecycle output includes
-Ready and ConfigurationChanged events; the event listener is removed before
-shutdown.
+供应方记录购买事件载荷和单独合并的跟踪上下文。
+断言校验业务事件跟踪不执行评估钩子，也不继承此前评估中钩子注入的 cohort。
+`track_checked` 将分析传输错误作为 Result 返回；标准的 Unit 返回接口 `track` 将相同失败记录为 SDK 诊断，不抛错。
+生命周期输出包含 Ready 与 ConfigurationChanged 事件，事件监听器在关闭前移除。
